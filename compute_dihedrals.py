@@ -1,8 +1,8 @@
 #! /usr/bin/python
 
-#Usage python compute-dihedrals.py PDB.pdb (or .cif)
+#Usage python compute-dihedrals.py PDB.pdb (or .cif, .pdb.gz, .cif.gz)
 
-import math, sys
+import math, sys, gzip
 from Bio import PDB
 
 
@@ -153,11 +153,17 @@ def compute_dihedrals(pdbfilename):
         ignoremodified=('PTR','TPO','SEP','MSE','BWB','CAS','CME','CSO','CSS','CSX','MK8','MLY','NEP','NMM','PHD','CAF','CSD','CYO','OCS','OCY','SCS',\
                         'ALY','KCX',',LGY','CXM','MHO','T8L','ACE','AME','CY0','UNK','T8L','MHO','COM')
         
+        if '.gz' in pdbfilename.lower():
+           handle=gzip.open(pdbfilename,'rt') 
+           pdbfilename=pdbfilename[0:-3]
+        else:
+            handle=open(pdbfilename,'r')
+            
         if '.pdb' in pdbfilename.lower():
             parser=PDB.PDBParser(QUIET=True)
         if '.cif' in pdbfilename.lower():
             parser=PDB.MMCIFParser(QUIET=True)
-        structure=parser.get_structure("PDB",(f'{pdbfilename}'))
+        structure=parser.get_structure("PDB",handle)
        
         for model in structure:
             for chain in model:
@@ -180,7 +186,8 @@ def compute_dihedrals(pdbfilename):
                             chi4=compute_chi4(structure,model,chain,prev_residue)       
         
                             first=3
-                            print(f'{pdbfilename[0:-4]} {model.id} {chain.id} {prev_residue.id[1]} {prev_residue.resname} 999.00 {psi} 999.00 {chi1} {chi2} {chi3} {chi4}\n')
+                            print(pdbfilename[0:-4].rjust(8)+str(model.id).rjust(8)+chain.id.rjust(8)+str(prev_residue.id[1]).rjust(8)+prev_residue.resname.rjust(8)+\
+                                  str(999.00).rjust(8)+str(psi).rjust(8)+str(999.00).rjust(8)+str(chi1).rjust(8)+str(chi2).rjust(8)+str(chi3).rjust(8)+str(chi4).rjust(8))
                             continue
         
                         if first==3:        #This block computes phi and psi dihedrals from second residue onward. At anytime in the block we have three residue variables assigned.
@@ -193,7 +200,8 @@ def compute_dihedrals(pdbfilename):
                             chi3=compute_chi3(structure,model,chain,curr_residue)      
                             chi4=compute_chi4(structure,model,chain,curr_residue)       
                             
-                            print(f'{pdbfilename[0:-4]} {model.id} {chain.id} {curr_residue.id[1]} {curr_residue.resname} {phi} {psi} {omega} {chi1} {chi2} {chi3} {chi4}\n')
+                            print(pdbfilename[0:-4].rjust(8)+str(model.id).rjust(8)+chain.id.rjust(8)+str(curr_residue.id[1]).rjust(8)+curr_residue.resname.rjust(8)+\
+                                  str(phi).rjust(8)+str(psi).rjust(8)+str(omega).rjust(8)+str(chi1).rjust(8)+str(chi2).rjust(8)+str(chi3).rjust(8)+str(chi4).rjust(8))
                             
                             prev_residue=curr_residue
                             curr_residue=next_residue       #update residue variables
@@ -206,12 +214,14 @@ def compute_dihedrals(pdbfilename):
                         chi3=compute_chi3(structure,model,chain,curr_residue)      
                         chi4=compute_chi4(structure,model,chain,curr_residue)       
                         
-                        print(f'{pdbfilename[0:-4]} {model.id} {chain.id} {curr_residue.id[1]} {curr_residue.resname} {phi} 999.00 {omega} {chi1} {chi2} {chi3} {chi4}\n')
+                        print(pdbfilename[0:-4].rjust(8)+str(model.id).rjust(8)+chain.id.rjust(8)+str(curr_residue.id[1]).rjust(8)+curr_residue.resname.rjust(8)\
+                             +str(phi).rjust(8)+str(999.00).rjust(8)+str(omega).rjust(8)+str(chi1).rjust(8)+str(chi2).rjust(8)+str(chi3).rjust(8)+str(chi4).rjust(8))
         return
    
 
 if __name__=='__main__':
     pdbfilename=sys.argv[1]
-    print('PDB MODEL CHAIN RESI RESNAME PHI PSI OMEGA CHI1 CHI2 CHI3 CHI4\n')
+    print('PDB'.rjust(8)+'MODEL'.rjust(8)+'CHAIN'.rjust(8)+'RESI'.rjust(8)+'RESNAME'.rjust(8)+'PHI'.rjust(8)+'PSI'.rjust(8)+'OMEGA'.rjust(8)+'CHI1'.rjust(8)+\
+          'CHI2'.rjust(8)+'CHI3'.rjust(8)+'CHI4'.rjust(8))
     compute_dihedrals(pdbfilename)
     
